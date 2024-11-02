@@ -3,14 +3,17 @@ import time
 import json
 import re
 import glob
+import os
 
 def api_get():
-    response = requests.get("https://u8whitimu7.execute-api.ap-southeast-1.amazonaws.com/prod/register")
+    api_url = os.getenv("API_URL") + "/register"  # Use API_URL environment variable
+    response = requests.get(api_url)
     print(response.json())
 # Call the function
 #api_get()
 
 def api_post():
+    api_url = os.getenv("API_URL") + "/download-dataset"
     auth_token = "40eb759a5b52681d559f93eef0fa989cf930687143472ed70ab526cef0367b02"
     headers = {
         "authorizationToken": auth_token,
@@ -29,11 +32,7 @@ def api_post():
         }
         
         # Make the POST request to retrieve dataset
-        response = requests.post(
-            "https://u8whitimu7.execute-api.ap-southeast-1.amazonaws.com/prod/download-dataset",
-            headers=headers,
-            json=payload
-        )
+        response = requests.post(api_url, headers=headers, json=payload)
         
         # Check if the response was successful
         if response.status_code == 200:
@@ -149,7 +148,7 @@ def cleanData():
     
 def api_testSolution():
     # API endpoint URL
-    api_url = "https://u8whitimu7.execute-api.ap-southeast-1.amazonaws.com/prod/test/check-data-validation"
+    api_url = os.getenv("API_URL") + "/test/check-data-validation"
     
     # Load the data from validated_dataset.json
     try:
