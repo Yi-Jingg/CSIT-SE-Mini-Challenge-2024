@@ -3,18 +3,37 @@ import time
 import json
 import re
 import glob
-import os
+
+auth_token = None
 
 def api_get():
-    api_url = os.getenv("API_URL") + "/register"  # Use API_URL environment variable
+    global auth_token
+    api_url = "https://u8whitimu7.execute-api.ap-southeast-1.amazonaws.com/prod/register"
     response = requests.get(api_url)
-    print(response.json())
-# Call the function
-#api_get()
+
+    if response.status_code == 200:
+        data = response.json()
+        
+        if 'data' in data:
+            auth_token = data['data'].get("authorizationToken")
+            token_expiry = data['data'].get("tokenExpiryAt")
+
+            if auth_token:
+                print("Authorization Token:", auth_token)
+                print("Token Expiry:", token_expiry)
+            else:
+                print("Authorization token not found in response.")
+        else:
+            print("Error: 'data' key not found in response.")
+    else:
+        print(f"Failed to retrieve data: {response.status_code} - {response.text}")
+api_get()
 
 def api_post():
-    api_url = os.getenv("API_URL") + "/download-dataset"
-    auth_token = "40eb759a5b52681d559f93eef0fa989cf930687143472ed70ab526cef0367b02"
+    global auth_token  # Use the global variable
+    if auth_token is None:
+        print("Error: No authorization token available. Call api_get() first.")
+        return
     headers = {
         "authorizationToken": auth_token,
         "Content-Type": "application/json"
@@ -22,30 +41,28 @@ def api_post():
 
     # Initialize pagination variables
     next_id = ""  # Start with an empty next_id for the first request
-    dataset_urls = []  # To store dataset URLs from each response
+    dataset_urls = [] 
 
     # Loop to retrieve paginated data until next_id is empty
     while True:
-        # Prepare the payload with the current next_id
         payload = {
             "next_id": next_id
         }
-        
-        # Make the POST request to retrieve dataset
-        response = requests.post(api_url, headers=headers, json=payload)
-        
-        # Check if the response was successful
+        response = requests.post(
+            "https://u8whitimu7.execute-api.ap-southeast-1.amazonaws.com/prod/download-dataset",
+            headers=headers,
+            json=payload
+        )
+
         if response.status_code == 200:
             response_data = response.json()
             
-            # Access nested data if response structure includes a "data" key
             if "data" in response_data:
                 data = response_data["data"]
                 
                 # Retrieve dataset URL from data
                 if "dataset_url" in data:
                     dataset_url = data["dataset_url"]
-                    print("Dataset URL:", dataset_url)
                     
                     # Download the dataset using the URL
                     dataset_response = requests.get(dataset_url)
@@ -88,7 +105,7 @@ def api_post():
             break
 
 # Call the function
-#api_post()
+api_post()
 
 def is_valid_record(record):
     # Check that the id is an integer
@@ -115,10 +132,10 @@ def is_valid_record(record):
     return True
 
 def cleanData():
-    # File pattern to find all JSON datasets
-    file_pattern = "dataset_*.json"  # Adjust pattern as needed if filenames are different
+
+    file_pattern = "dataset_*.json"
     output_file_name = "validated_dataset.json"
-    all_validated_data = []  # List to store all validated records
+    all_validated_data = []
 
     # Process each dataset file matching the pattern
     for input_file_name in glob.glob(file_pattern):
@@ -144,11 +161,11 @@ def cleanData():
     print(f"All validated data saved to {output_file_name}")
 
 # Call the function
-#cleanData()
+cleanData()
     
 def api_testSolution():
     # API endpoint URL
-    api_url = os.getenv("API_URL") + "/test/check-data-validation"
+    api_url = "https://u8whitimu7.execute-api.ap-southeast-1.amazonaws.com/prod/test/check-data-validation"
     
     # Load the data from validated_dataset.json
     try:
