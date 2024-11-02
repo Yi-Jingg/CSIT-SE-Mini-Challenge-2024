@@ -64,7 +64,7 @@ sort_and_select_top_k()
 
 def api_testSolution():
     # API endpoint URL
-    api_url = "https://u8whitimu7.execute-api.ap-southeast-1.amazonaws.com/prod/test/check-topk-sort"
+    api_url = os.getenv("API_URL") + "/test/check-topk-sort"
     
 
     try:
